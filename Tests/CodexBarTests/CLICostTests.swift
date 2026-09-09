@@ -418,9 +418,9 @@ struct CLICostTests {
     @Test
     func `renders cost text snapshot`() {
         let snap = CostUsageTokenSnapshot(
-            sessionTokens: 1200,
+            sessionTokens: 999_999,
             sessionCostUSD: 1.25,
-            last30DaysTokens: 9000,
+            last30DaysTokens: 999_999_999,
             last30DaysCostUSD: 9.99,
             historyDays: 90,
             daily: [],
@@ -431,8 +431,8 @@ struct CLICostTests {
             .replacingOccurrences(of: "$ ", with: "$")
 
         #expect(output.contains("Claude Cost (API-rate estimate)"))
-        #expect(output.contains("Today: $1.25 · 1.2K tokens"))
-        #expect(output.contains("Last 90 days: $9.99 · 9K tokens"))
+        #expect(output.contains("Today: $1.25 · 1M tokens"))
+        #expect(output.contains("Last 90 days: $9.99 · 1B tokens"))
         #expect(output.contains("cache read/write tokens"))
         #expect(output.contains("Claude Code /status"))
     }

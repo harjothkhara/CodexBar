@@ -2,6 +2,9 @@
 
 ## 0.57.1 — Unreleased
 
+### Fixed
+- Token counts: promote rounded `1000K` and `1000M` values to `1M` and `1B` (#3518).
+
 ## 0.57.0 — 2026-09-08
 
 ### Highlights
