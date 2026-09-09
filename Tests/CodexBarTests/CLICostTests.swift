@@ -415,12 +415,20 @@ struct CLICostTests {
         #expect(!json.contains("\"sessions\""))
     }
 
-    @Test
-    func `renders cost text snapshot`() {
+    @Test(arguments: [
+        (1200, 9000, "1.2K", "9K"),
+        (999_999, 999_999_999, "1M", "1B"),
+    ])
+    func `renders cost text snapshot`(
+        sessionTokens: Int,
+        historyTokens: Int,
+        sessionText: String,
+        historyText: String)
+    {
         let snap = CostUsageTokenSnapshot(
-            sessionTokens: 999_999,
+            sessionTokens: sessionTokens,
             sessionCostUSD: 1.25,
-            last30DaysTokens: 999_999_999,
+            last30DaysTokens: historyTokens,
             last30DaysCostUSD: 9.99,
             historyDays: 90,
             daily: [],
@@ -431,8 +439,8 @@ struct CLICostTests {
             .replacingOccurrences(of: "$ ", with: "$")
 
         #expect(output.contains("Claude Cost (API-rate estimate)"))
-        #expect(output.contains("Today: $1.25 · 1M tokens"))
-        #expect(output.contains("Last 90 days: $9.99 · 1B tokens"))
+        #expect(output.contains("Today: $1.25 · \(sessionText) tokens"))
+        #expect(output.contains("Last 90 days: $9.99 · \(historyText) tokens"))
         #expect(output.contains("cache read/write tokens"))
         #expect(output.contains("Claude Code /status"))
     }
