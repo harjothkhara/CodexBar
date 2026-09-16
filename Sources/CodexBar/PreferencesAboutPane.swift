@@ -59,6 +59,7 @@ struct AboutPane: View {
                 Section {
                     Text(self.updater.unavailableReason ?? L("updates_unavailable"))
                         .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
                 }
             }
 
