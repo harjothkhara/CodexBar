@@ -7,6 +7,7 @@ import Testing
 @MainActor
 struct PluginProviderSpecTests {
     private static let providers: [UsageProvider] = [
+        .bai,
         .xkiro,
         .atlascloud,
         .vercel,
@@ -124,6 +125,7 @@ struct PluginProviderSpecTests {
     @Test
     func `pilot pipelines keep their credential boundaries without prototype flags`() async throws {
         let keys: [UsageProvider: String] = [
+            .bai: "BAI_API_KEY",
             .xkiro: "XKIRO_API_KEY",
             .atlascloud: "ATLASCLOUD_API_KEY",
             .vercel: "AI_GATEWAY_API_KEY",

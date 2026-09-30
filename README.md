@@ -10,7 +10,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-6e5aff?style=flat-square)](LICENSE)
 [![Site](https://img.shields.io/badge/site-codexbar.app-16d3b4?style=flat-square)](https://codexbar.app)
 
-<a href="https://codexbar.app"><img src="docs/social.png?v=6c28517cfe05c9db" alt="CodexBar — every AI coding limit in your menu bar. 87 providers." width="100%" /></a>
+<a href="https://codexbar.app"><img src="docs/social.png?v=dbbb9fb1bddfb89f" alt="CodexBar — every AI coding limit in your menu bar. 88 providers." width="100%" /></a>
 
 Tiny macOS 14+ menu bar app that keeps **AI coding-provider limits visible** and shows when each window resets. See the [supported providers](#providers) below. One status item per provider, or Merge Icons mode with a provider switcher. No Dock icon, minimal UI, dynamic bar icons.
 
@@ -179,6 +179,7 @@ See [CLI configuration](docs/cli-configuration.md) for the full flow.
 - [Atlas Cloud](docs/atlascloud.md) — API key for the account's available USD balance.
 - [Vercel AI Gateway](docs/vercel.md) — API key for the team's USD balance and lifetime spend.
 - [xKiro](docs/xkiro.md) — API key for daily free-token usage, remaining allowance, and the midnight UTC reset.
+- [B.AI](docs/bai.md) — API key for personal credit balances and team member quotas.
 - Open to new providers: [provider authoring guide](docs/provider.md).
 
 ## Icon & Screenshot

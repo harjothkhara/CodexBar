@@ -157,8 +157,8 @@ struct ProviderArchitectureGatekeeperTests {
         }
 
         // Hex normalization rounds ClinePass to #61A3FA; other widget components remain unchanged.
-        #expect(widgetFingerprint == 6_927_315_133_167_192_314)
-        #expect(burnDownFingerprint == 16_992_290_873_030_609_074)
+        #expect(widgetFingerprint == 2_675_680_859_423_179_907)
+        #expect(burnDownFingerprint == 18_130_235_443_392_850_506)
     }
 
     @Test

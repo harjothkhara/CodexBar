@@ -8,7 +8,7 @@ read_when:
 
 # Providers
 
-CodexBar currently registers 87 provider IDs. Some companies expose multiple surfaces, such as Codex vs OpenAI API or
+CodexBar currently registers 88 provider IDs. Some companies expose multiple surfaces, such as Codex vs OpenAI API or
 OpenCode vs OpenCode Go, because the auth source and quota shape differ.
 
 ## Fetch strategies (current)
@@ -111,6 +111,7 @@ complete when the available scan window covers fewer days.
 | Ollama | API key verifies Cloud API access (`api`); browser cookies expose Cloud quota windows (`web`). |
 | [llmman](llmman.md) | Local `llmman serve` node report, optional API key → bundled plugin for loaded-model memory and store summary (`api`). |
 | [xKiro](xkiro.md) | API key → bundled plugin for account-wide daily free tokens and the midnight UTC reset (`api`). |
+| [B.AI](bai.md) | API key → bundled plugin for personal credit balances and team member quotas, including unlimited quotas (`api`). |
 | Synthetic | API key from config/env → quota API (`api`). |
 | OpenRouter | API token (config, overrides env) → key quota and credits APIs; a management key enables account Activity on the official API (`api`). |
 | Perplexity | Browser cookies/manual cookie/env session token → credits API (`web`). |

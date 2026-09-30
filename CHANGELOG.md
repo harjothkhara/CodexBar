@@ -2,6 +2,10 @@
 
 ## 0.69.1 — Unreleased
 
+### Added
+
+- B.AI: show personal credit balances and team member quotas through the official balance API (#4134).
+
 ### Changed
 
 - Provider colors: refresh 16 verified brand accents while preserving readable menu colors and existing widget palettes; synchronize website and social preview colors (#4075). Thanks @elijahfriedman!

@@ -1,6 +1,20 @@
 [
   {
     "availability": [true, true, true],
+    "cliResolution": {"BAI": ["bai"]},
+    "enterpriseHost": false,
+    "environmentAvailability": [[true, false], [true, true], [true, true], [true, true]],
+    "fields": ["secure"],
+    "id": "bai",
+    "projectToken": "",
+    "projections": {"BAI_API_KEY": "fixture-key"},
+    "sourceModes": ["api", "auto"],
+    "strategies": ["bai.js"],
+    "supportsTokenCost": false,
+    "workspaceOrder": null
+  },
+  {
+    "availability": [true, true, true],
     "cliResolution": {"XKIRO": ["xkiro"]},
     "enterpriseHost": false,
     "environmentAvailability": [[true, false], [true, true], [true, true], [true, true]],

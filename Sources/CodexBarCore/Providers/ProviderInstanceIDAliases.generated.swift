@@ -90,6 +90,7 @@ extension ProviderInstanceID {
     public static let vercel = UsageProvider.vercel.instanceID
     public static let llmman = UsageProvider.llmman.instanceID
     public static let xkiro = UsageProvider.xkiro.instanceID
+    public static let bai = UsageProvider.bai.instanceID
 }
 
 // swiftformat:enable sortDeclarations
