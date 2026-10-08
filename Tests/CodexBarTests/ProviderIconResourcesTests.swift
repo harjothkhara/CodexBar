@@ -27,6 +27,16 @@ struct ProviderIconResourcesTests {
     }
 
     @Test
+    func `pi provider icon is not the generic Greek pi glyph`() throws {
+        let root = try Self.repoRoot()
+        let resources = root.appending(path: "Sources/CodexBar/Resources", directoryHint: .isDirectory)
+        let pi = try String(contentsOf: resources.appending(path: "ProviderIcon-pi.svg"), encoding: .utf8)
+        let genericPiPath = "M20 25H80C82.7614 25 85 27.2386 85 30"
+
+        #expect(!pi.contains(genericPiPath))
+    }
+
+    @Test
     func `provider brand icons are cached after first load`() throws {
         ProviderBrandIcon.resetCacheForTesting()
         defer { ProviderBrandIcon.resetCacheForTesting() }
