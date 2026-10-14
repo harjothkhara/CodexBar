@@ -188,13 +188,15 @@ final class UpdateStatus {
 import Sparkle
 
 @MainActor
-final class SparkleUpdaterController: NSObject, UpdaterProviding, SPUUpdaterDelegate {
+final class SparkleUpdaterController: NSObject, UpdaterProviding, SPUUpdaterDelegate,
+    SPUStandardUserDriverDelegate
+{
     private static let presentationTimeout: Duration = .seconds(60)
 
     private lazy var controller = SPUStandardUpdaterController(
         startingUpdater: false,
         updaterDelegate: self,
-        userDriverDelegate: nil)
+        userDriverDelegate: self)
     let updateStatus = UpdateStatus()
     let unavailableReason: String? = nil
     let isAvailable = true
@@ -297,6 +299,34 @@ final class SparkleUpdaterController: NSObject, UpdaterProviding, SPUUpdaterDele
 
     nonisolated func allowedChannels(for updater: SPUUpdater) -> Set<String> {
         UpdateChannel.current.allowedSparkleChannels
+    }
+
+    /// Scheduled alerts in a background app can be ordered in behind other apps without a key, main or
+    /// occlusion transition, so DockIconController never observes them (#4516). Promote here instead;
+    /// the update-cycle-finished handler ends the attempt. User-initiated checks already promoted.
+    nonisolated func standardUserDriverWillHandleShowingUpdate(
+        _ handleShowingUpdate: Bool,
+        forUpdate update: SUAppcastItem,
+        state: SPUUserUpdateState)
+    {
+        let userInitiated = state.userInitiated
+        Task { @MainActor in
+            guard Self.shouldPromoteDockIconForShowingUpdate(
+                handleShowingUpdate: handleShowingUpdate,
+                userInitiated: userInitiated,
+                hasPendingPresentationAttempt: self.dockPresentationAttemptID != nil)
+            else { return }
+            self.dockPresentationAttemptID = DockIconController.shared.promote(
+                presentationTimeout: Self.presentationTimeout)
+        }
+    }
+
+    nonisolated static func shouldPromoteDockIconForShowingUpdate(
+        handleShowingUpdate: Bool,
+        userInitiated: Bool,
+        hasPendingPresentationAttempt: Bool) -> Bool
+    {
+        handleShowingUpdate && !userInitiated && !hasPendingPresentationAttempt
     }
 }
 
