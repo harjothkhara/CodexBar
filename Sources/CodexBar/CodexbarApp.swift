@@ -311,13 +311,18 @@ final class SparkleUpdaterController: NSObject, UpdaterProviding, SPUUpdaterDele
     {
         let userInitiated = state.userInitiated
         Task { @MainActor in
-            guard Self.shouldPromoteDockIconForShowingUpdate(
+            if Self.shouldPromoteDockIconForShowingUpdate(
                 handleShowingUpdate: handleShowingUpdate,
                 userInitiated: userInitiated,
                 hasPendingPresentationAttempt: self.dockPresentationAttemptID != nil)
-            else { return }
-            self.dockPresentationAttemptID = DockIconController.shared.promote(
-                presentationTimeout: Self.presentationTimeout)
+            {
+                self.dockPresentationAttemptID = DockIconController.shared.promote(
+                    presentationTimeout: Self.presentationTimeout)
+            }
+            // Promotion alone never fronts the alert; the rescan does, once Sparkle has ordered it in.
+            if handleShowingUpdate, !userInitiated {
+                DockIconController.shared.windowsMayHaveChanged()
+            }
         }
     }
 

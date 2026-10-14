@@ -267,6 +267,12 @@ final class DockIconController: NSObject {
         return attemptID
     }
 
+    /// Call when another component is about to order a window in (for example Sparkle's scheduled alert).
+    /// The coalesced rescan runs on a later main-actor turn and fronts any newly presented window once.
+    func windowsMayHaveChanged() {
+        self.setNeedsReevaluation()
+    }
+
     func prepareToOpenSettings() {
         self.settingsPresentationAttemptID = self.promote(
             presentationTimeout: Self.settingsPresentationTimeout)

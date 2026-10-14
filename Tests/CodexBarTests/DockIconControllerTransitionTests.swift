@@ -115,6 +115,41 @@ struct DockIconControllerTransitionTests {
     }
 
     @Test
+    func `windowsMayHaveChanged schedules exactly one coalesced reevaluation`() {
+        let harness = Harness()
+        harness.controller.start()
+        harness.scheduler.runAll()
+        let scheduledAfterSeed = harness.scheduler.scheduledCount
+
+        harness.controller.windowsMayHaveChanged()
+        harness.controller.windowsMayHaveChanged()
+        #expect(harness.scheduler.scheduledCount == scheduledAfterSeed + 1)
+        harness.scheduler.runAll()
+        #expect(harness.scheduler.pendingCount == 0)
+    }
+
+    @Test
+    func `scheduled Sparkle alert is fronted once over a key Settings window when already regular`() {
+        let harness = Harness()
+        let settings = harness.settings(isVisible: true)
+        harness.windows = [settings]
+        harness.controller.start()
+        harness.scheduler.runAll()
+        #expect(harness.policy.isRegular)
+        #expect(harness.presentedIDs == [settings.id])
+
+        let sparkle = harness.sparkle(isVisible: true)
+        harness.windows = [settings, sparkle]
+        harness.controller.windowsMayHaveChanged()
+        harness.scheduler.runAll()
+        #expect(harness.presentedIDs == [settings.id, sparkle.id])
+
+        harness.controller.windowsMayHaveChanged()
+        harness.scheduler.runAll()
+        #expect(harness.presentedIDs == [settings.id, sparkle.id])
+    }
+
+    @Test
     func `Settings window becoming key or main promotes it`() {
         for name in [NSWindow.didBecomeKeyNotification, NSWindow.didBecomeMainNotification] {
             let harness = Harness()
