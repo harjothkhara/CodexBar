@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Qwen Cloud: treat a Team summary with an empty `Data` object as no Team subscription, so Individual-only accounts no longer show "Team usage unavailable" (#4525). Thanks @mvicari!
 - Plugins: release temporary objects between QuickJS refreshes and free retired JavaScriptCore contexts and completed runtimes (#4512, #4486).
 - Claude: retain account emails from existing OAuth profile checks, even when the profile lacks organization details (#4493).
 

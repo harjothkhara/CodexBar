@@ -86,6 +86,7 @@ defineProvider({
       const summary = await rpc("BssOpenAPI-V3", "GetSeatSubscriptionSummary", params, "cn-hangzhou");
       if (summary.Data === null) return { empty: true };
       const data = record(summary.Data) ?? fail("subscription");
+      if (!("SubscriptionGroupList" in data)) return { empty: true };
       const groups = data.SubscriptionGroupList;
       if (!Array.isArray(groups)) return fail("subscription groups");
       if (!groups.length) return { empty: true };
