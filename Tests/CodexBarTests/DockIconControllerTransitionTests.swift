@@ -9,6 +9,11 @@ struct DockIconControllerTransitionTests {
         let harness = Harness()
         harness.windows = [harness.sparkle(isVisible: true)]
         harness.controller.start()
+        harness.scheduler.runAll()
+        let scheduledAfterSeed = harness.scheduler.scheduledCount
+        let scansAfterSeed = harness.scanCount
+        harness.windows = []
+        harness.policy.isRegular = false
 
         for _ in 0..<50 {
             harness.center.post(name: NSApplication.didUpdateNotification, object: nil)
@@ -16,9 +21,41 @@ struct DockIconControllerTransitionTests {
         }
         harness.scheduler.runAll()
 
-        #expect(harness.scheduler.scheduledCount == 0)
-        #expect(harness.scanCount == 0)
+        #expect(harness.scheduler.scheduledCount == scheduledAfterSeed)
+        #expect(harness.scanCount == scansAfterSeed)
         #expect(!harness.policy.isRegular)
+    }
+
+    @Test
+    func `windows visible before start are promoted by the seed scan`() {
+        let sparkleHarness = Harness()
+        let sparkle = sparkleHarness.sparkle(isVisible: true)
+        sparkleHarness.windows = [sparkle]
+        sparkleHarness.controller.start()
+        #expect(!sparkleHarness.policy.isRegular)
+        sparkleHarness.scheduler.runAll()
+        #expect(sparkleHarness.policy.isRegular)
+        #expect(sparkleHarness.presentedIDs == [sparkle.id])
+
+        let settingsHarness = Harness()
+        let settings = settingsHarness.settings(isVisible: true)
+        settingsHarness.windows = [settings]
+        settingsHarness.controller.start()
+        settingsHarness.scheduler.runAll()
+        #expect(settingsHarness.policy.isRegular)
+        #expect(settingsHarness.presentedIDs == [settings.id])
+    }
+
+    @Test
+    func `starting twice seeds only one rescan`() {
+        let harness = Harness()
+        harness.controller.start()
+        harness.controller.start()
+        #expect(harness.scheduler.scheduledCount == 1)
+        harness.scheduler.runAll()
+        harness.controller.start()
+        #expect(harness.scheduler.scheduledCount == 1)
+        #expect(harness.scanCount == 1)
     }
 
     @Test
@@ -174,16 +211,19 @@ struct DockIconControllerTransitionTests {
     func `Settings promotion is immediate and a failed presentation demotes explicitly`() {
         let harness = Harness()
         harness.controller.start()
+        harness.scheduler.runAll()
+        let scansAfterSeed = harness.scanCount
+        let scheduledAfterSeed = harness.scheduler.scheduledCount
 
         harness.controller.prepareToOpenSettings()
         #expect(harness.policy.isRegular)
         #expect(harness.policy.activateCount == 1)
-        #expect(harness.scanCount == 0)
+        #expect(harness.scanCount == scansAfterSeed)
 
         harness.controller.settingsWindowPresentationFailed()
-        #expect(harness.scanCount == 1)
+        #expect(harness.scanCount == scansAfterSeed + 1)
         #expect(!harness.policy.isRegular)
-        #expect(harness.scheduler.scheduledCount == 0)
+        #expect(harness.scheduler.scheduledCount == scheduledAfterSeed)
     }
 
     @Test
@@ -248,6 +288,8 @@ struct DockIconControllerTransitionTests {
     func `presentation timeout demotes when no window appears`() async {
         let harness = Harness()
         harness.controller.start()
+        harness.scheduler.runAll()
+        let scheduledAfterSeed = harness.scheduler.scheduledCount
         harness.controller.promote(presentationTimeout: .milliseconds(1))
         #expect(harness.policy.isRegular)
 
@@ -257,7 +299,7 @@ struct DockIconControllerTransitionTests {
         }
 
         #expect(!harness.policy.isRegular)
-        #expect(harness.scheduler.scheduledCount == 0)
+        #expect(harness.scheduler.scheduledCount == scheduledAfterSeed)
     }
 }
 

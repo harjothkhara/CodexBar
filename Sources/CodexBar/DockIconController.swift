@@ -246,6 +246,9 @@ final class DockIconController: NSObject {
                 name: name,
                 object: nil)
         }
+
+        // Windows (for example Sparkle's update window) may have been presented before observation began.
+        self.setNeedsReevaluation()
     }
 
     @discardableResult
