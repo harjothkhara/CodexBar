@@ -102,7 +102,8 @@ struct QwenCloudTeamPluginTests {
         root["data"] = envelope
         let multiple = try #require(String(data: JSONSerialization.data(withJSONObject: root), encoding: .utf8))
         let nonArrayGroups = #"{"successResponse":true,"data":{"Success":true,"Data":{"SubscriptionGroupList":{}}}}"#
-        for payload in [#"{"successResponse":true,"data":{}}"#, nonArrayGroups, multiple] {
+        let partial = #"{"successResponse":true,"data":{"Success":true,"Data":{"ProductCode":"x"}}}"#
+        for payload in [#"{"successResponse":true,"data":{}}"#, nonArrayGroups, partial, multiple] {
             let error = await #expect(throws: ProviderFetchClassifiedError.self) {
                 try await Self.fetch(payload, engine: engine)
             }
@@ -196,6 +197,7 @@ struct QwenCloudTeamPluginTests {
         (true, #"{"successResponse":true,"data":{}}"#),
         (false, #"{"successResponse":true,"data":{"Success":true,"Data":null}}"#),
         (false, #"{"successResponse":true,"data":{"Success":true,"Data":{}}}"#),
+        (true, #"{"successResponse":true,"data":{"Success":true,"Data":{"ProductCode":"x"}}}"#),
     ])
     func `Individual fallback distinguishes absent Team from a broken Team response`(
         broken: Bool, summary: String) async throws
