@@ -5,6 +5,7 @@
 ### Fixed
 
 - Claude: retain account emails from existing OAuth profile checks, even when the profile lacks organization details (#4493).
+- Dock: stop rescanning every window on each event-loop pass, which kept CodexBar busy while idle; the Dock icon now follows only real window transitions for Settings and update windows (#4516). Thanks @Leen15!
 
 ## 0.75.0 — 2026-10-13
 
