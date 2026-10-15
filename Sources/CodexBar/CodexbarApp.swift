@@ -297,41 +297,24 @@ final class SparkleUpdaterController: NSObject, UpdaterProviding, SPUUpdaterDele
         }
     }
 
-    nonisolated func allowedChannels(for updater: SPUUpdater) -> Set<String> {
-        UpdateChannel.current.allowedSparkleChannels
-    }
-
-    /// Scheduled alerts in a background app can be ordered in behind other apps without a key, main or
-    /// occlusion transition, so DockIconController never observes them (#4516). Promote here instead;
-    /// the update-cycle-finished handler ends the attempt. User-initiated checks already promoted.
+    /// Scheduled alerts can appear without key, main, or occlusion notifications.
     nonisolated func standardUserDriverWillHandleShowingUpdate(
         _ handleShowingUpdate: Bool,
-        forUpdate update: SUAppcastItem,
+        forUpdate _: SUAppcastItem,
         state: SPUUserUpdateState)
     {
-        let userInitiated = state.userInitiated
+        guard handleShowingUpdate, !state.userInitiated else { return }
         Task { @MainActor in
-            if Self.shouldPromoteDockIconForShowingUpdate(
-                handleShowingUpdate: handleShowingUpdate,
-                userInitiated: userInitiated,
-                hasPendingPresentationAttempt: self.dockPresentationAttemptID != nil)
-            {
+            if self.dockPresentationAttemptID == nil {
                 self.dockPresentationAttemptID = DockIconController.shared.promote(
                     presentationTimeout: Self.presentationTimeout)
             }
-            // Promotion alone never fronts the alert; the rescan does, once Sparkle has ordered it in.
-            if handleShowingUpdate, !userInitiated {
-                DockIconController.shared.windowsMayHaveChanged()
-            }
+            DockIconController.shared.windowsMayHaveChanged()
         }
     }
 
-    nonisolated static func shouldPromoteDockIconForShowingUpdate(
-        handleShowingUpdate: Bool,
-        userInitiated: Bool,
-        hasPendingPresentationAttempt: Bool) -> Bool
-    {
-        handleShowingUpdate && !userInitiated && !hasPendingPresentationAttempt
+    nonisolated func allowedChannels(for updater: SPUUpdater) -> Set<String> {
+        UpdateChannel.current.allowedSparkleChannels
     }
 }
 

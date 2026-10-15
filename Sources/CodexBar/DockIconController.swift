@@ -98,19 +98,6 @@ enum DockIconPresentationAttemptDecision: Equatable {
     case awaiting
     case presented
     case timedOut
-
-    static func resolve(
-        isAwaiting: Bool,
-        hasPresentedWindow: Bool,
-        deadlineExpired: Bool)
-        -> Self
-    {
-        guard isAwaiting else { return .inactive }
-        if hasPresentedWindow {
-            return .presented
-        }
-        return deadlineExpired ? .timedOut : .awaiting
-    }
 }
 
 struct DockIconPresentationAttemptID: Equatable, Sendable {
@@ -148,10 +135,8 @@ struct DockIconPresentationAttemptTracker: Equatable {
             return .awaiting
         }
 
-        let decision = DockIconPresentationAttemptDecision.resolve(
-            isAwaiting: true,
-            hasPresentedWindow: hasPresentedWindow,
-            deadlineExpired: deadlineID != nil)
+        let decision: DockIconPresentationAttemptDecision = hasPresentedWindow
+            ? .presented : (deadlineID == nil ? .awaiting : .timedOut)
         if decision == .presented || decision == .timedOut {
             self.activeID = nil
         }
@@ -159,96 +144,45 @@ struct DockIconPresentationAttemptTracker: Equatable {
     }
 }
 
-struct DockIconWindowCandidate {
-    let id: ObjectIdentifier
-    let descriptor: DockIconWindowDescriptor
-    let present: @MainActor () -> Void
-}
-
-@MainActor
-struct DockIconActivationPolicyClient {
-    var isRegular: @MainActor () -> Bool
-    var setRegular: @MainActor () -> Bool
-    var setAccessory: @MainActor () -> Bool
-    var activate: @MainActor () -> Void
-
-    static var live: Self {
-        Self(
-            isRegular: { NSApp.activationPolicy() == .regular },
-            setRegular: { NSApp.setActivationPolicy(.regular) },
-            setAccessory: { NSApp.setActivationPolicy(.accessory) },
-            activate: { NSApp.activate(ignoringOtherApps: true) })
-    }
-}
-
 @MainActor
 final class DockIconController: NSObject {
-    typealias WindowCandidatesProvider = @MainActor (_ settingsWindow: NSWindow?) -> [DockIconWindowCandidate]
-    typealias ReevaluationScheduler = @MainActor (@escaping @MainActor @Sendable () -> Void) -> Void
-
     static let shared = DockIconController()
     private static let settingsPresentationTimeout: Duration = .seconds(2)
 
-    /// Real window transitions that can change Dock eligibility. Do not observe `didUpdate`:
-    /// AppKit posts it on every event-loop pass (and once per window), which rescans all windows
-    /// continuously and keeps the app busy while idle (#4516).
-    static let windowTransitionNotifications: [Notification.Name] = [
-        // Ordered in or out, hidden, or covered: catches windows that appear without becoming key
-        // (background Sparkle alerts) and windows ordered out without closing.
-        NSWindow.didChangeOcclusionStateNotification,
-        NSWindow.didBecomeKeyNotification,
-        NSWindow.didBecomeMainNotification,
-        NSWindow.didMiniaturizeNotification,
-        NSWindow.didDeminiaturizeNotification,
-        // Closing windows are still visible while the notification is delivered; the scheduled
-        // reevaluation runs after the close finishes.
-        NSWindow.willCloseNotification,
-        // App hide/unhide toggles every window's visibility, including already occluded ones.
-        NSApplication.didHideNotification,
-        NSApplication.didUnhideNotification,
-    ]
-
+    var windowProvider: @MainActor () -> [NSWindow] = { NSApp.windows }
+    private(set) var isReevaluationScheduled = false
     private var isStarted = false
     private var isManagingRegularPolicy = false
-    private var isReevaluationScheduled = false
     private var presentationAttemptTracker = DockIconPresentationAttemptTracker()
     private var settingsPresentationAttemptID: DockIconPresentationAttemptID?
     private var presentedWindowIDs: Set<ObjectIdentifier> = []
     private weak var settingsWindow: NSWindow?
     private var presentationTimeoutTask: Task<Void, Never>?
-    private let notificationCenter: NotificationCenter
-    private let activationPolicy: DockIconActivationPolicyClient
-    private let windowCandidates: WindowCandidatesProvider
-    private let scheduleReevaluation: ReevaluationScheduler
     private let logger = CodexBarLog.logger(LogCategories.app)
-
-    init(
-        notificationCenter: NotificationCenter = .default,
-        activationPolicy: DockIconActivationPolicyClient = .live,
-        windowCandidates: @escaping WindowCandidatesProvider = DockIconController.liveWindowCandidates,
-        scheduleReevaluation: @escaping ReevaluationScheduler = DockIconController.scheduleOnLaterTurn)
-    {
-        self.notificationCenter = notificationCenter
-        self.activationPolicy = activationPolicy
-        self.windowCandidates = windowCandidates
-        self.scheduleReevaluation = scheduleReevaluation
-        super.init()
-    }
 
     func start() {
         guard !self.isStarted else { return }
         self.isStarted = true
 
-        for name in Self.windowTransitionNotifications {
-            self.notificationCenter.addObserver(
+        let center = NotificationCenter.default
+        // didUpdate fires every event-loop pass; only real transitions need a scan.
+        for name in [
+            NSWindow.didBecomeKeyNotification,
+            NSWindow.didBecomeMainNotification,
+            NSWindow.didChangeOcclusionStateNotification,
+            NSWindow.didMiniaturizeNotification,
+            NSWindow.didDeminiaturizeNotification,
+            NSWindow.willCloseNotification,
+            NSApplication.didHideNotification,
+            NSApplication.didUnhideNotification,
+        ] {
+            center.addObserver(
                 self,
-                selector: #selector(self.windowStateDidChange(_:)),
+                selector: #selector(self.windowsMayHaveChanged(_:)),
                 name: name,
                 object: nil)
         }
-
-        // Windows (for example Sparkle's update window) may have been presented before observation began.
-        self.setNeedsReevaluation()
+        self.windowsMayHaveChanged()
     }
 
     @discardableResult
@@ -265,12 +199,6 @@ final class DockIconController: NSObject {
             self?.reevaluatePolicy(presentationDeadlineExpiredFor: attemptID)
         }
         return attemptID
-    }
-
-    /// Call when another component is about to order a window in (for example Sparkle's scheduled alert).
-    /// The coalesced rescan runs on a later main-actor turn and fronts any newly presented window once.
-    func windowsMayHaveChanged() {
-        self.setNeedsReevaluation()
     }
 
     func prepareToOpenSettings() {
@@ -302,17 +230,11 @@ final class DockIconController: NSObject {
         self.reevaluatePolicy()
     }
 
-    @objc private func windowStateDidChange(_ notification: Notification) {
-        _ = notification
-        self.setNeedsReevaluation()
-    }
-
-    /// Coalesces bursts (for example one occlusion notification per window on hide) into a single
-    /// scan on a later main-actor turn, after the triggering transition has finished.
-    private func setNeedsReevaluation() {
+    @objc func windowsMayHaveChanged(_: Notification? = nil) {
         guard !self.isReevaluationScheduled else { return }
         self.isReevaluationScheduled = true
-        self.scheduleReevaluation { [weak self] in
+        Task { @MainActor [weak self] in
+            await Task.yield()
             guard let self else { return }
             self.isReevaluationScheduled = false
             self.reevaluatePolicy()
@@ -322,9 +244,17 @@ final class DockIconController: NSObject {
     private func reevaluatePolicy(
         presentationDeadlineExpiredFor attemptID: DockIconPresentationAttemptID? = nil)
     {
-        let describedWindows = self.windowCandidates(self.settingsWindow)
+        let describedWindows = self.windowProvider().map { window in
+            (
+                window: window,
+                descriptor: DockIconWindowDescriptor.describe(
+                    window,
+                    isKnownSettingsWindow: window === self.settingsWindow))
+        }
         let presentedWindowIDs = Set(describedWindows.compactMap { item in
-            DockIconPolicyDecision.shouldPromoteForPresentedWindow(item.descriptor) ? item.id : nil
+            DockIconPolicyDecision.shouldPromoteForPresentedWindow(item.descriptor)
+                ? ObjectIdentifier(item.window)
+                : nil
         })
         // Capture the delta before updating stored state so we only key newly presented
         // dialogs. Fronting every eligible window can re-key Settings over a Sparkle alert.
@@ -351,8 +281,12 @@ final class DockIconController: NSObject {
         if !presentedWindowIDs.isEmpty {
             self.ensureRegularPolicy(activate: hasNewPresentedWindow)
             if hasNewPresentedWindow {
-                for item in describedWindows where newlyPresentedWindowIDs.contains(item.id) {
-                    item.present()
+                for item in describedWindows where newlyPresentedWindowIDs.contains(ObjectIdentifier(item.window)) {
+                    if item.descriptor.isSettingsWindow {
+                        SettingsWindowStageBehavior.present(item.window)
+                    } else {
+                        item.window.makeKeyAndOrderFront(nil)
+                    }
                 }
             }
         }
@@ -361,48 +295,22 @@ final class DockIconController: NSObject {
         let windows = describedWindows.map(\.descriptor)
         guard !DockIconPolicyDecision.shouldUseRegularActivationPolicy(windows: windows) else { return }
 
-        if self.activationPolicy.setAccessory() {
+        if NSApp.setActivationPolicy(.accessory) {
             self.isManagingRegularPolicy = false
         }
     }
 
     private func ensureRegularPolicy(activate: Bool) {
-        if !self.activationPolicy.isRegular(), self.activationPolicy.setRegular() {
+        if NSApp.activationPolicy() != .regular, NSApp.setActivationPolicy(.regular) {
             self.isManagingRegularPolicy = true
         }
         if activate {
-            self.activationPolicy.activate()
-        }
-    }
-
-    static func liveWindowCandidates(settingsWindow: NSWindow?) -> [DockIconWindowCandidate] {
-        NSApp.windows.map { window in
-            let descriptor = DockIconWindowDescriptor.describe(
-                window,
-                isKnownSettingsWindow: window === settingsWindow)
-            return DockIconWindowCandidate(
-                id: ObjectIdentifier(window),
-                descriptor: descriptor,
-                present: { [weak window] in
-                    guard let window else { return }
-                    if descriptor.isSettingsWindow {
-                        SettingsWindowStageBehavior.present(window)
-                    } else {
-                        window.makeKeyAndOrderFront(nil)
-                    }
-                })
-        }
-    }
-
-    static func scheduleOnLaterTurn(_ work: @escaping @MainActor @Sendable () -> Void) {
-        Task { @MainActor in
-            await Task.yield()
-            work()
+            NSApp.activate(ignoringOtherApps: true)
         }
     }
 
     deinit {
         self.presentationTimeoutTask?.cancel()
-        self.notificationCenter.removeObserver(self)
+        NotificationCenter.default.removeObserver(self)
     }
 }

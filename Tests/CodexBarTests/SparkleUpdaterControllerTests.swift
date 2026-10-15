@@ -85,30 +85,6 @@ struct SparkleUpdaterControllerTests {
         try await self.expectUpdateReady(false, in: fixture.subject)
     }
 
-    @Test(arguments: [false, true], [false, true])
-    func `only scheduled updates shown by Sparkle promote the Dock icon`(
-        userInitiated: Bool,
-        hasPendingPresentationAttempt: Bool)
-    {
-        let promotes = SparkleUpdaterController.shouldPromoteDockIconForShowingUpdate(
-            handleShowingUpdate: true,
-            userInitiated: userInitiated,
-            hasPendingPresentationAttempt: hasPendingPresentationAttempt)
-
-        #expect(promotes == (!userInitiated && !hasPendingPresentationAttempt))
-    }
-
-    @Test(arguments: [false, true], [false, true])
-    func `updates the delegate shows itself never promote the Dock icon`(
-        userInitiated: Bool,
-        hasPendingPresentationAttempt: Bool)
-    {
-        #expect(!SparkleUpdaterController.shouldPromoteDockIconForShowingUpdate(
-            handleShowingUpdate: false,
-            userInitiated: userInitiated,
-            hasPendingPresentationAttempt: hasPendingPresentationAttempt))
-    }
-
     private func makeFixture(isUpdateReady: Bool = false)
         -> (subject: SparkleUpdaterController, updater: SPUUpdater)
     {
