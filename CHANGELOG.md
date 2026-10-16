@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Developer tests: detached fixtures that ignore SIGTERM now exit when the test process dies, so an interrupted test run no longer leaves them running (#4567). Thanks @postoso!
 - Usage forecasts: restore estimated session quotas and windows until reset when older history contains reset-time corrections (#4540). Thanks @emanuelst!
 - Usage cards: distinguish plan renewal dates from quota resets with “Plan renews” wording across all 23 locales (#4540). Thanks @emanuelst!
 - Cost history: reduce CPU spent scanning large Codex and Claude message bodies without changing parsed usage. (#4552) Thanks @Lucenx9!
