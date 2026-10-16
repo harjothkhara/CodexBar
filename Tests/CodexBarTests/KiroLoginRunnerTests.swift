@@ -114,12 +114,12 @@ struct KiroLoginRunnerTests {
         try owner.run()
         defer {
             if owner.isRunning { _ = kill(owner.processIdentifier, SIGKILL) }
+            ProcessExitRelease.afterExit(owner)
         }
 
         let holderPID = try await KiroProcessTestSupport.waitForPID(in: holderPIDFile)
         #expect(kill(holderPID, 0) == 0)
         #expect(kill(owner.processIdentifier, SIGKILL) == 0)
-        owner.waitUntilExit()
 
         try await KiroProcessTestSupport.waitForExit(
             of: holderPID,

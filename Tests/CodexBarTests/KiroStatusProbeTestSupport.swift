@@ -129,14 +129,13 @@ enum KiroProcessTestSupport {
 
     // MARK: - Fixture lifetime
 
-    /// Longest time a held fixture may outlive its owner's last liveness signal.
-    /// Well above every test's own wait, so it never shortens a scenario under test.
+    /// Maximum lifetime of an intentionally held fixture, above every test's own wait.
     static let fixtureHoldLimit: TimeInterval = 120
 
     /// Python expression that blocks until `ownerPID` exits or `timeout` seconds pass.
     ///
-    /// It returns a non-empty list once the owner has exited (immediately if the owner is already
-    /// gone or a zombie) and an empty list on timeout. SIGTERM-ignoring fixtures use it instead of
+    /// It returns an exit event or an empty list on timeout; an already-reaped owner raises ESRCH,
+    /// which also ends the fixture. SIGTERM-ignoring fixtures use it instead of
     /// waiting forever, so they cannot outlive an interrupted test run whose cleanup `defer` never
     /// runs (#4567). The owner defaults to the test process itself; watching a fixture's immediate
     /// parent would end the hold early. Requires `import select` and contains no quotes, so it can be

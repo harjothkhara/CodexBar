@@ -505,7 +505,8 @@ struct SpawnedProcessGroupTests {
                     os.write(writer, b"1")
                     os.close(writer)
                     counter = 1
-                    while True:
+                    deadline = time.monotonic() + \(KiroProcessTestSupport.fixtureHoldLimit)
+                    while time.monotonic() < deadline:
                         counter += 1
                         heartbeat.seek(0)
                         heartbeat.write(str(counter))
@@ -513,6 +514,7 @@ struct SpawnedProcessGroupTests {
                         heartbeat.flush()
                         if \(KiroProcessTestSupport.pythonOwnerExitWait(timeout: 0.02)):
                             os._exit(0)
+                    os._exit(0)
             os.close(writer)
             os.read(reader, 1)
             os.close(reader)
@@ -639,7 +641,8 @@ struct SpawnedProcessGroupTests {
                 handle.write(str(os.getpid()))
             counter = 0
             with open(sys.argv[2], "w") as heartbeat:
-                while True:
+                deadline = time.monotonic() + \(KiroProcessTestSupport.fixtureHoldLimit)
+                while time.monotonic() < deadline:
                     counter += 1
                     heartbeat.seek(0)
                     heartbeat.write(str(counter))
@@ -737,7 +740,8 @@ struct SpawnedProcessGroupTests {
                         os.write(writer, b"1")
                         os.close(writer)
                         counter = 1
-                        while True:
+                        deadline = time.monotonic() + \(KiroProcessTestSupport.fixtureHoldLimit)
+                        while time.monotonic() < deadline:
                             counter += 1
                             heartbeat.seek(0)
                             heartbeat.write(str(counter))
@@ -745,6 +749,7 @@ struct SpawnedProcessGroupTests {
                             heartbeat.flush()
                             if \(KiroProcessTestSupport.pythonOwnerExitWait(timeout: 0.02)):
                                 os._exit(0)
+                        os._exit(0)
                 with open(sys.argv[2], "w") as handle:
                     handle.write(str(child))
                 os.close(writer)
