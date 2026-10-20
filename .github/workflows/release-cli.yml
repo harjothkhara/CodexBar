@@ -319,7 +319,7 @@ jobs:
           echo "bin_dir=$("${SHOW_BIN_ARGS[@]}")" >> "$GITHUB_OUTPUT"
 
       - name: Verify CodexBarCLI does not link libxml2
-        if: ${{ matrix.platform == 'linux' }}
+        if: ${{ matrix.asset-platform == 'linux' }}
         shell: bash
         run: |
           set -euo pipefail
