@@ -1,5 +1,5 @@
 import Foundation
-#if canImport(FoundationXML)
+#if os(macOS) && canImport(FoundationXML)
 import FoundationXML
 #endif
 
@@ -66,12 +66,20 @@ public enum ProviderPluginIconSVG {
               svg.range(of: "<!ENTITY", options: .caseInsensitive) == nil,
               let data = svg.data(using: .utf8)
         else { return false }
+        #if os(macOS)
         let delegate = AllowlistDelegate()
         let parser = XMLParser(data: data)
         parser.shouldResolveExternalEntities = false
         parser.delegate = delegate
         return parser.parse() && delegate.isValid && delegate.sawRoot
+        #else
+        // Linux must not link FoundationXML (libxml2.so.2, #4652); only the macOS app draws plugin icons.
+        _ = data
+        return false
+        #endif
     }
+
+    #if os(macOS)
 
     private final class AllowlistDelegate: NSObject, XMLParserDelegate {
         var isValid = true
@@ -123,4 +131,5 @@ public enum ProviderPluginIconSVG {
             parser.abortParsing()
         }
     }
+    #endif
 }

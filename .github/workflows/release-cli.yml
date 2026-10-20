@@ -318,6 +318,18 @@ jobs:
 
           echo "bin_dir=$("${SHOW_BIN_ARGS[@]}")" >> "$GITHUB_OUTPUT"
 
+      - name: Verify CodexBarCLI does not link libxml2
+        if: ${{ matrix.platform == 'linux' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          BIN="${{ steps.build.outputs.bin_dir }}/CodexBarCLI"
+          readelf -d "$BIN" | grep NEEDED || true
+          if readelf -d "$BIN" | grep -q libxml2; then
+            echo "::error::CodexBarCLI links libxml2 (FoundationXML); keep XMLParser/XMLDocument under os(macOS) (#4652)"
+            exit 1
+          fi
+
       - name: Smoke test CodexBarCLI
         timeout-minutes: 5
         shell: bash
