@@ -598,17 +598,7 @@ jobs:
           set -euo pipefail
           BIN_DIR="$(swift build -c release --product CodexBarCLI --static-swift-stdlib --show-bin-path)"
           BIN="$BIN_DIR/CodexBarCLI"
-          DEPS="$(readelf -d "$BIN")"
-          NEEDED="$(printf '%s\n' "$DEPS" | grep NEEDED || true)"
-          if [ -z "$NEEDED" ]; then
-            echo "::error::readelf reported no NEEDED entries for $BIN; cannot verify libxml2 is absent"
-            exit 1
-          fi
-          printf '%s\n' "$NEEDED"
-          if printf '%s\n' "$NEEDED" | grep -q libxml2; then
-            echo "::error::CodexBarCLI links libxml2 (FoundationXML); keep XMLParser/XMLDocument under os(macOS) (#4652)"
-            exit 1
-          fi
+          bash Scripts/check-linux-cli-linkage.sh "$BIN"
 
       - name: Summarize Linux CLI build
         if: ${{ always() }}

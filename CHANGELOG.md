@@ -4,7 +4,7 @@
 
 ### Fixed
 
-- Linux CLI: keep FoundationXML (`libxml2.so.2`) out of the glibc CLI again by validating plugin SVG icons only on macOS, so the CLI starts on Ubuntu 26.04 and a CI check now fails any build that links libxml2 (#4652). Thanks @simonsteiner!
+- Linux CLI: keep FoundationXML (`libxml2.so.2`) out of the glibc CLI again by validating plugin SVG icons only on macOS, so the CLI starts on Ubuntu 26.04 and a CI check now fails any build that links libxml2 (#4652, #4653). Thanks @simonsteiner and @harjothkhara!
 
 ## 0.78.0 — 2026-10-19
 

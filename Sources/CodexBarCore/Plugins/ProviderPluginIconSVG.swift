@@ -20,8 +20,6 @@ public enum ProviderPluginIconSVG {
         "points", "stroke", "stroke-width", "stroke-linecap", "stroke-linejoin",
     ]
 
-    static let svgNamespace = "http://www.w3.org/2000/svg"
-
     /// Geometry, colours and transforms need only these characters. Excluding `\`, `/`, `:`, `;`, quotes and
     /// `*` leaves no CSS escape, comment, declaration or URL syntax, so a value cannot reference anything.
     static let allowedValueCharacters = CharacterSet(
@@ -32,7 +30,7 @@ public enum ProviderPluginIconSVG {
     static let paintPattern = #"^(?:[A-Za-z]+|#[0-9A-Fa-f]{3,8}|rgba?\([0-9.%,\s]+\))$"#
 
     static func isAllowedValue(_ name: String, _ value: String) -> Bool {
-        if name == "xmlns" { return value == self.svgNamespace }
+        if name == "xmlns" { return value == "http://www.w3.org/2000/svg" }
         if name == "fill" || name == "stroke" {
             let paint = value.trimmingCharacters(in: .whitespaces)
             return paint.range(of: self.paintPattern, options: .regularExpression) != nil
@@ -61,20 +59,18 @@ public enum ProviderPluginIconSVG {
     }
 
     public static func isValid(_ svg: String) -> Bool {
+        #if os(macOS)
         guard !svg.isEmpty, svg.utf8.count <= self.maximumBytes,
               svg.range(of: "<!DOCTYPE", options: .caseInsensitive) == nil,
               svg.range(of: "<!ENTITY", options: .caseInsensitive) == nil,
               let data = svg.data(using: .utf8)
         else { return false }
-        #if os(macOS)
         let delegate = AllowlistDelegate()
         let parser = XMLParser(data: data)
         parser.shouldResolveExternalEntities = false
         parser.delegate = delegate
-        return parser.parse() && delegate.isValid && delegate.sawRoot
+        return parser.parse() && delegate.sawRoot
         #else
-        // Linux must not link FoundationXML (libxml2.so.2, #4652); only the macOS app draws plugin icons.
-        _ = data
         return false
         #endif
     }
@@ -82,7 +78,6 @@ public enum ProviderPluginIconSVG {
     #if os(macOS)
 
     private final class AllowlistDelegate: NSObject, XMLParserDelegate {
-        var isValid = true
         var sawRoot = false
         private var depth = 0
 
@@ -94,7 +89,7 @@ public enum ProviderPluginIconSVG {
             attributes attributeDict: [String: String] = [:])
         {
             if self.depth == 0 {
-                if elementName == "svg", !self.sawRoot { self.sawRoot = true } else { self.reject(parser) }
+                if elementName == "svg", !self.sawRoot { self.sawRoot = true } else { parser.abortParsing() }
             }
             self.depth += 1
             guard ProviderPluginIconSVG.allowedElements.contains(elementName),
@@ -104,7 +99,7 @@ public enum ProviderPluginIconSVG {
                           && ProviderPluginIconSVG.isAllowedValue(name, value)
                   })
             else {
-                self.reject(parser)
+                parser.abortParsing()
                 return
             }
         }
@@ -119,15 +114,10 @@ public enum ProviderPluginIconSVG {
         }
 
         func parser(_ parser: XMLParser, foundCDATA CDATABlock: Data) {
-            self.reject(parser)
+            parser.abortParsing()
         }
 
         func parser(_ parser: XMLParser, foundProcessingInstructionWithTarget target: String, data: String?) {
-            self.reject(parser)
-        }
-
-        private func reject(_ parser: XMLParser) {
-            self.isValid = false
             parser.abortParsing()
         }
     }
