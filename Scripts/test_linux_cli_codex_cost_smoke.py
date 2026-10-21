@@ -10,7 +10,7 @@ SCRIPT = Path(__file__).with_name('check-linux-cli-codex-cost-smoke.sh')
 # The stub fails unless it sees the reproducer's arguments and session file.
 PREAMBLE = '''#!/bin/sh
 [ "$*" = "cost --provider codex --json" ] || exit 64
-[ -s "$CODEX_HOME/sessions/2026/10/20/rollout-test.jsonl" ] || exit 65
+[ -s "$CODEX_HOME/sessions/$(date +%Y/%m/%d)/rollout-test.jsonl" ] || exit 65
 [ -d "$HOME" ] || exit 66
 '''
 

@@ -8,7 +8,8 @@ trap 'rm -rf "$work_dir"' EXIT
 
 codex_home="$work_dir/codex"
 fake_home="$work_dir/home"
-session_dir="$codex_home/sessions/2026/10/20"
+# Local-time partition, like the CLI day keys, so the file stays inside the rolling 30-day scan window.
+session_dir="$codex_home/sessions/$(date +%Y/%m/%d)"
 mkdir -p "$session_dir" "$fake_home"
 printf '{}\n' > "$session_dir/rollout-test.jsonl"
 
