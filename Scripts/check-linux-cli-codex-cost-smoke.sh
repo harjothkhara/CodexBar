@@ -15,7 +15,7 @@ printf '{}\n' > "$session_dir/rollout-test.jsonl"
 
 status=0
 env -u XDG_CONFIG_HOME -u XDG_CACHE_HOME -u XDG_DATA_HOME -u XDG_STATE_HOME \
-  CODEX_HOME="$codex_home" HOME="$fake_home" \
+  CODEXBAR_CONFIG="$work_dir/config.json" CODEX_HOME="$codex_home" HOME="$fake_home" \
   "$bin" cost --provider codex --json > "$work_dir/stdout.json" 2> "$work_dir/stderr.txt" || status=$?
 cat "$work_dir/stderr.txt" >&2
 if [[ "$status" -ne 0 ]]; then

@@ -1383,22 +1383,17 @@ extension CostUsageScanner {
 
 extension Data {
     func containsAscii(_ needle: String) -> Bool {
-        // Avoid `String.data(using:)`: it routes through the generic `Data(Sequence)` initializer, whose
-        // metadata resolution crashes the static musl Linux CLI (#4672).
-        var needle = needle
-        return needle.withUTF8 { pattern in
-            // Matches `Data.range(of:)`, which never finds an empty needle.
-            guard !pattern.isEmpty else { return false }
-            guard pattern.count <= self.count else { return false }
-            return self.withUnsafeBytes { haystack in
+        guard let n = needle.data(using: .utf8) else { return false }
+        guard !n.isEmpty else { return self.range(of: n) != nil }
+        guard n.count <= self.count else { return false }
+        return self.withUnsafeBytes { haystack in
+            n.withUnsafeBytes { pattern in
                 guard let base = haystack.baseAddress, let needleBase = pattern.baseAddress else { return false }
                 let first = Int32(pattern[0])
                 let limit = haystack.count - pattern.count + 1
                 var offset = 0
                 while offset < limit {
-                    guard let candidate = memchr(base.advanced(by: offset), first, limit - offset) else {
-                        return false
-                    }
+                    guard let candidate = memchr(base.advanced(by: offset), first, limit - offset) else { return false }
                     if memcmp(candidate, needleBase, pattern.count) == 0 { return true }
                     offset = base.distance(to: UnsafeRawPointer(candidate)) + 1
                 }

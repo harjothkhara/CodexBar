@@ -6,7 +6,7 @@
 
 ### Fixed
 
-- Linux CLI: stop the static musl build from crashing (SIGSEGV) in `cost --provider codex` whenever a Codex session file exists, by searching session lines without the generic `Data` conversion that fails there, and CI now runs that reproducer against the musl and glibc CLIs (#4672). Thanks @psl75011!
+- Linux CLI: prevent static musl builds from crashing when scanning non-empty Codex session files, with a regression check for musl and glibc builds (#4672, #4673). Thanks @harjothkhara and @psl75011!
 
 ## 0.79.0 — 2026-10-20
 

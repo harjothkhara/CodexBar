@@ -12,6 +12,7 @@ PREAMBLE = '''#!/bin/sh
 [ "$*" = "cost --provider codex --json" ] || exit 64
 [ -s "$CODEX_HOME/sessions/$(date +%Y/%m/%d)/rollout-test.jsonl" ] || exit 65
 [ -d "$HOME" ] || exit 66
+[ "$CODEXBAR_CONFIG" = "$(dirname "$HOME")/config.json" ] || exit 67
 '''
 
 
