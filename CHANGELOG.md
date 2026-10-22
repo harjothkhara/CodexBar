@@ -2,6 +2,7 @@
 
 ## 0.79.1 — Unreleased
 
+- Linux desktop: show a readable provider initial when a bundled logo is unavailable (#4693). Thanks @SaahiilM!
 - Claude cost history: price Mythos 5.1 and Mythos 5 from published Anthropic rates and refresh cached estimates without rereading unchanged transcripts (#4578). Thanks @urda!
 - Kiro: skip background CLI probes when the usage service is unreachable, preventing repeated offline sign-in tabs while retaining last-good usage (#4589). Thanks @dnicolson!
 - Linux: link the community CodexBar GTK front-end using the shared CLI (#4697). Thanks @SaahiilM!
@@ -10,7 +11,7 @@
 - Antigravity: preserve separate versioned Gemini quota names, including Gemini 4 Argon, instead of repeating the generic Gemini label (#4585). Thanks @jangisaac-dev!
 - Claude: explain how to recover a temporarily unavailable macOS Keychain cache, with translated guidance (#4576). Thanks @mpses!
 - Plugins: release each user-plugin network session when its request completes, avoiding retained clients after plugins reload (#4584). Thanks @SebTardif!
-- Tavily: keep plan, key, and pay-as-you-go usage when a free account reports a null pay-as-you-go limit instead of failing refresh (#4710). Thanks @Driedsandwich!
+- Tavily: keep plan, key, and pay-as-you-go usage when a free account reports a null pay-as-you-go limit instead of failing refresh (#4710, #4711). Thanks @harjothkhara and @Driedsandwich!
 
 - Pace: show how much of a monthly allowance can be used per day until reset, using the remaining allowance and local calendar days. (#4677) Thanks @anthonybvila!
 - Settings: explain that Highest usage compares quotas only and recommend Current selection for providers without quotas (#4666). Thanks @oryband!
