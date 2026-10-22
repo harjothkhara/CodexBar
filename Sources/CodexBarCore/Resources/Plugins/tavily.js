@@ -42,7 +42,15 @@ defineProvider({
       { title: "API key", rows: rows(keyUsed, keyLimit) },
     ];
     if (account.paygo_usage !== undefined || account.paygo_limit !== undefined) {
-      details.push({ title: "Pay as you go", rows: rows(count(account.paygo_usage), count(account.paygo_limit)) });
+      const paygoUsed = count(account.paygo_usage);
+      // A null PAYGO cap (free accounts) is unspecified, not unlimited: show usage only.
+      details.push({
+        title: "Pay as you go",
+        rows:
+          account.paygo_limit === null
+            ? [{ label: "Used", value: format(paygoUsed) }]
+            : rows(paygoUsed, count(account.paygo_limit)),
+      });
     }
     const plan = account.current_plan;
     if (plan !== undefined && (typeof plan !== "string" || !plan.trim() || plan.length > 120)) return fail();
